@@ -132,5 +132,7 @@ dmypy.json
 # ignore the data folder
 data/
 
+# ignore the old_codes folder
+old_codes/
 
 
