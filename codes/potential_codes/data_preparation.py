@@ -9,7 +9,7 @@ AutoMemberId	AutoFirstServiceAuto	AutoCancerDay	AutoLastEffectiveDay	TreatGroupF
 3	00121216131824131101	2012-08-13	1348.0	2696.0	340	C49.4	Multiple sclerosis	C49	NaN
 4	00000014239430081325	2013-10-28	NaN	2255.0	340	NaN	Multiple sclerosis	nan	NaN
 '''
-treat_df = pd.read_pickle('../../data/treat_data_RA.pkl')
+treat_df = pd.read_pickle('../data/treat_data_RA.pkl')
 
 # treat_df = pd.read_csv('data/treat_data_RA.pkl')
 # %%
@@ -26,7 +26,7 @@ control_df = pd.read_pickle('../../data/control_data_RA.pkl')
 # %%
 '''
 '''
-treat_df = pd.read_pickle('../../data/treat_data_final.pkl')
+treat_df = pd.read_pickle('../data/treat_data_RA.pkl')
 
 # %%
 treat_df = treat_df[treat_df['PheWASString'] == 'Rheumatoid arthritis']
@@ -42,13 +42,31 @@ treat_df['AutoMemberId'] = treat_df['AutoMemberId'].apply(lambda x: str(x).zfill
 treat_df['AutoCancerDay'] = treat_df['AutoCancerDay'].astype('Int64')
 treat_df['AutoLastEffectiveDay'] = treat_df['AutoLastEffectiveDay'].astype('Int64')
 # %%
-treat_df.to_pickle('../../data/treat_data_RA.pkl')
+treat_df.loc[treat_df['TreatGroupFirstCancerIcd'].notna(), 'TreatGroupFirstCancerIcd'] = \
+    treat_df.loc[treat_df['TreatGroupFirstCancerIcd'].notna(), 'TreatGroupFirstCancerIcd'].astype(str)
+# %%
+# add cancer icd short information
+import numpy as np
+treat_df['TreatCancerIcdShort'] = np.nan
+treat_df.loc[treat_df['TreatGroupFirstCancerIcd'].notna(), 'TreatCancerIcdShort'] = \
+    treat_df.loc[treat_df['TreatGroupFirstCancerIcd'].notna(), 
+    'TreatGroupFirstCancerIcd'].apply(lambda x: x[:3])
+# %%
+treat_df.to_pickle('../data/treat_data_RA.pkl')
 # %%
 '''
 Change the type of each column of control_df
 
 '''
+import numpy as np
+control_df = pd.read_pickle('../data/control_data_RA.pkl')
 control_df['NonAutoCancerDay'] = control_df['NonAutoCancerDay'].astype('Int64')
 # %%
-control_df.to_pickle('../../data/control_data_RA.pkl')
+control_df['ControlCancerIcdShort'] = np.nan
+control_df.loc[control_df['ControlGroupFirstCancerIcd'].notna(), 
+    'ControlCancerIcdShort'] = \
+    control_df.loc[control_df['ControlGroupFirstCancerIcd'].notna(), 
+    'ControlGroupFirstCancerIcd'].apply(lambda x: x[:3])
+# %%
+control_df.to_pickle('../data/control_data_RA.pkl')
 # %%
