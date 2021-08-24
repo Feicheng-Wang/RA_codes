@@ -1,5 +1,6 @@
 # %%
 import pandas as pd
+from lifelines import KaplanMeierFitter
 
 def get_survival(df, cancer_icd_list, cancer_desc, mode):
     '''
@@ -42,7 +43,10 @@ def get_survival(df, cancer_icd_list, cancer_desc, mode):
     # copy the treat_df
     func_df = df.copy()
 
-    func_df['cancerFlag'] = func_df[f'{Mode}CancerIcdShort'].isin(cancer_icd_list)
+    if len(cancer_icd_list) != 0:
+        func_df['cancerFlag'] = func_df[f'{Mode}CancerIcdShort'].isin(cancer_icd_list)
+    else:
+        func_df['cancerFlag'] = ~func_df[f'{Mode}CancerIcdShort'].isna()
     num_cancer = func_df['cancerFlag'].sum()
 
     # show the number of cancers in that group
@@ -146,3 +150,23 @@ def get_survival_both(treat_df, control_df, cancer_icd_list, cancer_desc):
         raise
     
     return treat_survival_df, control_survival_df
+
+
+def cal_survival_risk(data, times=[10, 30, 90, 180, 365, 1000]):
+    '''
+        data: need colnames survivalTime, cancerFlag and weightN
+        times: several times to calculate the cumulative survival risk
+    ---
+        return: a risk_dict with 
+            key: 10, 30... and 
+            value: the cumulative survival risk
+    '''
+    kmf = KaplanMeierFitter()
+    T = data['survivalTime']
+    E = data['cancerFlag']
+    weights = data['weightN']
+    kmf.fit(T, event_observed=E, weights=weights)
+    risk_dict = {}
+    for time in times:
+        risk_dict[time] = kmf.cumulative_density_at_times(times=time)
+    return risk_dict
