@@ -58,6 +58,9 @@ coverage.xml
 # DS store
 *.DS_Store
 
+# pickle
+*.pickle
+
 # Django stuff:
 *.log
 local_settings.py

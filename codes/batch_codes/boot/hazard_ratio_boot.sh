@@ -6,7 +6,7 @@ COMMANDS=("all_cancers" "lip, oral cavity, and pharynx" "digestive organs" \
     "eye, brain and other parts of central nervous system" \
     "thyroid and other endocrine glands" \
     "ill-defined, other secondary and unspecified sites" \
-    "neuroendocrine tumors" "lymphoid and hematopoietic tissue")
+    "neuroendocrine tumors" "lymphoid and hematopoietic tissue" "colo-rectum")
 for cancer_desc in "${COMMANDS[@]}"; do 
 echo "${cancer_desc}"
 #

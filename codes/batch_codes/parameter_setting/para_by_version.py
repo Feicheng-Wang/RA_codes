@@ -6,7 +6,7 @@ import pickle
 cancer_icd_list = ['C17','C18','C19','C20']
 cancer_desc = 'colo-rectum'
 
-with open('parameter_setting/{}.pickle'.format(cancer_desc), 'wb') as f:
+with open('{}.pickle'.format(cancer_desc), 'wb') as f:
     pickle.dump((cancer_icd_list, cancer_desc), f)
 
 # %%
@@ -45,7 +45,7 @@ cancer_dict = {
         [str(i) for i in range(200, 208+1)]
 }
 for cancer_desc, cancer_icd_list in cancer_dict.items():
-    with open('parameter_setting/{}.pickle'.format(cancer_desc), 'wb') as f:
+    with open('{}.pickle'.format(cancer_desc), 'wb') as f:
         pickle.dump((cancer_icd_list, cancer_desc), f)
 # %%
 # "140-149": "Lip, Oral Cavity, And Pharynx",
@@ -84,7 +84,7 @@ for cancer_desc, cancer_icd_list in cancer_dict.items():
 # "C7B-C7B":  "neuroendocrine tumors",
 # "C81-C96": "lymphoid and hematopoietic tissue"
 # %%
-with open('parameter_setting/{}.pickle'.format(cancer_desc), 'rb') as f:
+with open('{}.pickle'.format(cancer_desc), 'rb') as f:
     (cancer_icd_list, cancer_desc) = pickle.load(f)
 (cancer_icd_list, cancer_desc)
 # %%

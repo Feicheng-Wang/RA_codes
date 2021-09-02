@@ -3,80 +3,104 @@ Plot HR as bars (default at 365 days)
 '''
 # %%
 import pandas as pd
-from helper import get_survival_both
-import pickle
+# from helper import get_survival_both
+import numpy as np
+from helper import cal_survival_risk 
+from useful_chunk import create_dir
+import matplotlib.pyplot as plt
+import seaborn as sns
+# %%
+cancer_desc = "skin"
+random_seed = 1234
+
+df_list = []
+for cancer_desc in ["all_cancers", "lip, oral cavity, and pharynx", "digestive organs", \
+    "respiratory and intrathoracic organs", "bone and articular cartilage", \
+    "skin", "soft tissue", "Kaposi's sarcoma", "breast", "female genital organs", \
+    "male genital organs", "urinary tract", \
+    "eye, brain and other parts of central nervous system", \
+    "thyroid and other endocrine glands", \
+    "ill-defined, other secondary and unspecified sites", \
+    "neuroendocrine tumors", "lymphoid and hematopoietic tissue"]:
+    ###
+    df = pd.read_pickle(f'../output_data/boot_HR/\
+RA-cancer_desc_{cancer_desc}-randomseed_{random_seed}.pickle')
+
+    # distill the upper and lower
+    df = df.dropna()
+    tmp_df = df.groupby(['time_in_days', 'cancer_desc']).agg(
+        {'hazard_ratio' : [('upper', lambda x: np.quantile(x, 0.975)), 
+            ('lower', lambda x: np.nanquantile(x, 0.025))]
+        })
+    tmp_df.reset_index(inplace=True)
+    tmp_df.columns = ['time_in_days', 'cancer_desc', 'upper', 'lower']
+    df = tmp_df.copy()
+
+    # cal the original value
+    time_list = df.time_in_days.unique()
+    _, _, treat_survival_df, control_survival_df = \
+        pd.read_pickle(f'../output_data/survival_analysis/{cancer_desc}.pickle')
+
+    HR_array = np.zeros(len(time_list))
+
+    auto_risk_dict = cal_survival_risk(treat_survival_df, time_list)
+    nonauto_risk_dict = cal_survival_risk(control_survival_df, time_list)
+    for i, time in enumerate(time_list):
+        HR_array[i] = np.round(
+            float(auto_risk_dict[time]/nonauto_risk_dict[time]), 3)
+
+    tmp_df = pd.DataFrame()
+    tmp_df['hazard_ratio'] = HR_array
+    tmp_df['time_in_days'] = time_list
+    tmp_df['cancer_desc'] = cancer_desc
+    tmp_df['cancer_count'] = treat_survival_df.cancerFlag.sum()
+
+    df = df.merge(tmp_df, on=['cancer_desc', 'time_in_days'])
+    df_list.append(df)
+
+# merge all the data
+df = pd.concat(df_list, axis=0)
+# %%
+# save the results
+# df.to_pickle('../output_data/HR_summary.pickle')
+
+for label in ['upper', 'lower', 'hazard_ratio']:
+    df[label] = np.round(df[label], 2)
+df.columns = ['time_in_days', 'cancer_desc', 'lower', 'upper', 'hazard_ratio', 'cancer_count']
+df[['lower', 'upper']] = df[['upper', 'lower']] 
+
+df[df['time_in_days'] == 365].sort_values('cancer_count', ascending=False)
 
 # %%
-# For each auto, plot the bar of every cancer class's HR at 1500 days.
-df_list = list()
-# for subfolder_name in subfolder_names:
-subfolder_name = '68415Rheumatoid arthritis'
-folder_path = HOMEPATH + "/" + subfolder_name
-df = get_all_cancer_features_from_one_folder(folder_path)
-df['cancer_name'] = pd.Categorical(df['cancer_name'], CANCER_ORDER)
-df = df.sort_values(by=['cancer_count'])
-df.reset_index()
-# print(df)
-
-df = pd.merge(df, summary_df, left_on= 'cancer_name', right_on='cancer_desc')
-df.drop(columns = 'cancer_desc', inplace = True)
-# df = df[df['low2.5%'] != 0]
-df = df.sort_values('cancer_count', axis=0, ascending=True)
-df.reset_index(inplace= True, drop=True)
-df = df[df["cancer_count"] >= 30] # choose these with enough sample size
-
-with open(f'output/boot_HR/RA-original.pickle', 'rb') as handle:
-    origin_HR_df = pickle.load(handle)
-
-origin_HR_df.rename({'cancer_desc': 'cancer_name'}, inplace=True, axis=1)
-df = pd.merge(df, origin_HR_df, on = ["cancer_name", "time_in_days"])
-# %%
-# make the plot
-# import matplotlib 
-# font = {'size'   : 20}
-
-# matplotlib.rc('font', **font)
-# matplotlib.rcParams.update({'font.size': 22})
-
-N = len(df.cancer_name.unique())
-ind = np.arange(N)
-fig = plt.figure(figsize = (10,20))
-ax = fig.add_subplot(111)
+df = df.sort_values('cancer_count', ascending=True)
+N = len(df.cancer_desc.unique())
 color_plate = sns.color_palette("husl", 7)
-width = 0.15
 
+fig = plt.figure(figsize = (10,10))
+ax = fig.add_subplot(111)
 
-for i, time in enumerate(df.time_in_days.unique()):
-# for i, time in enumerate([1000]):
-    df_tmp = df[df.time_in_days == time]
-    # ax.barh(y_pos, performance, xerr=error, align='center')
-    ax.barh(ind+width*i, width = df_tmp.hazard_ratio, height=width, color=color_plate[i],
-        xerr=[df_tmp.hazard_ratio - df_tmp['low2.5%'], 
-        df_tmp['hi97.5%'] - df_tmp.hazard_ratio],
-        capsize=0, label=f"{time}-days")
-    # ax.invert_xaxis()
-    # df_tmp.plot.barh(x='cancer_name', y='HR',
-    # xerr=[df_tmp.HR - df_tmp['low2.5%'], 
-    #     df_tmp['hi97.5%'] - df_tmp.HR],capsize=0, width=0.2,
-    # ax = ax)
+time = 365
+df = df[df.time_in_days == time]
+df = df[df['upper'] != np.infty]
+ind = np.arange(len(df))
+ax.barh(ind, width = df.hazard_ratio, height=0.7, 
+    xerr=[df.hazard_ratio - df['lower'], 
+    df['upper'] - df.hazard_ratio],
+    capsize=0, label=f"{time}-days", 
+    color = color_plate[5])
 
 plt.legend()
-# ax.set_xticks(ind + width / 2, df.cancer_name.unique())
-plt.yticks(ind + width / 2, df.cancer_name.unique())
-max_height = 1 + np.nanmax(df['hi97.5%']) # ignore nan
-# for i, v in enumerate(df['cancer_count']):
-#     # print(i)
-#     height = df['hi97.5%'].iloc[i]
-#     ax.text(height + .03 * max_height, i-.25, str(v), color='blue', fontweight='bold')
+# ax.set_xticks(ind + width / 2, df.cancer_desc.unique())
+plt.yticks(ind + width / 2, df.cancer_desc.unique())
+max_height = 1 + np.nanmax(df['upper']) # ignore nan
 
 plt.xlim(right = max_height - 0.6)
-number, auto_name = split_number_and_name(subfolder_name)
-df['auto_name'] = auto_name
 df_list.append(df)
 plt.axvline(x=1, color="black")
-plt.title(f"{auto_name}")
-ax.set_xlabel(f"Matched patient count = {number}")
-create_dir('output/new_summary_fig')
+plt.title(f"RA")
+ax.set_xlabel(f"Matched patient count = {len(treat_survival_df)}")
+create_dir('../output')
+create_dir('../output/new_summary_fig')
 # plt.savefig(f"output/new_summary_fig/time-{time}-RA_hazard_ratio_withCI.pdf", 
 #     bbox_inches='tight') 
 ax.xaxis.label.set_size(20)
@@ -85,11 +109,9 @@ plt.xticks(fontsize= 20)
 plt.yticks(fontsize= 20)
 plt.legend(fontsize= 20)
 ax.title.set_size(fontsize=20)
-plt.savefig(f"output/new_summary_fig/RA_hazard_ratio_withCI.pdf", 
-    bbox_inches='tight')  
-plt.savefig(f"output/new_summary_fig/RA_hazard_ratio_withCI.png", dpi=200,
-    bbox_inches='tight')    
-# plt.savefig(f"../output/summary_fig/same_auto_different_cancer/{subfolder_name}.pdf", 
-#     bbox_inches='tight')  
+plt.savefig(f"../output/new_summary_fig/RA_hazard_ratio_withCI_time_{time}.pdf", 
+    bbox_inches='tight')   
 
 
+
+# %%

@@ -10,18 +10,22 @@ import sys
 import pandas as pd
 
 # %%
-if len(sys.argv) == 2:
-    cancer_desc = sys.argv[1]
-else:
-    cancer_desc = 'colo-rectum'
+# print(sys.argv)
+# assert(len(sys.argv) == 2)
+# if len(sys.argv) == 2:
+#     cancer_desc = sys.argv[1]
+# else:
+#     cancer_desc = 'colo-rectum'
+cancer_desc = " ".join(sys.argv[1:])
 
 # assume the root folder is at codes/
 with open('batch_codes/parameter_setting/{}.pickle'.format(cancer_desc), 'rb') as f:
         cancer_icd_list, _ = pickle.load(f)
 
-with open(f'../output_data/{cancer_desc}.pickle', 'rb') as f:
+with open(f'../output_data/survival_analysis/{cancer_desc}.pickle', 'rb') as f:
     (cancer_icd_list, cancer_desc, 
         treat_survival_df, control_survival_df) = pickle.load(f)
+
 
 i = 1234
 import random

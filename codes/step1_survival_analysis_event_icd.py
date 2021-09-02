@@ -6,16 +6,20 @@ import pandas as pd
 import sys
 from helper import get_survival_both
 import pickle
+from useful_chunk import create_dir
 
 # %%
 # read data
 treat_df = pd.read_pickle('../data/treat_data_RA.pkl')
 control_df = pd.read_pickle('../data/control_data_RA.pkl')
 # %%
-if len(sys.argv) == 2:
-    cancer_desc = sys.argv[1]
-else:
-    cancer_desc = 'colo-rectum'
+# print(sys.argv)
+# assert(len(sys.argv) == 2)
+# if len(sys.argv) == 2:
+#     cancer_desc = sys.argv[1]
+# else:
+#     cancer_desc = 'colo-rectum'
+cancer_desc = " ".join(sys.argv[1:])
 
 # assume the root folder is at codes/
 with open('batch_codes/parameter_setting/{}.pickle'.format(cancer_desc), 'rb') as f:
@@ -25,7 +29,8 @@ treat_survival_df, control_survival_df = \
     get_survival_both(treat_df, control_df, cancer_icd_list, cancer_desc)
 
 # %%
-with open(f'../output_data/{cancer_desc}.pickle', 'wb') as f:
+create_dir("../output_data/survival_analysis")
+with open(f'../output_data/survival_analysis/{cancer_desc}.pickle', 'wb') as f:
     pickle.dump((cancer_icd_list, cancer_desc, treat_survival_df, control_survival_df), f)
 
 # %%
