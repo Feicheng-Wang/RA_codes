@@ -1,14 +1,7 @@
 # %% 
 # import packges
 import pickle
-
-# %%
-cancer_icd_list = ['C17','C18','C19','C20']
-cancer_desc = 'colo-rectum'
-
-with open('{}.pickle'.format(cancer_desc), 'wb') as f:
-    pickle.dump((cancer_icd_list, cancer_desc), f)
-
+import pandas as pd
 # %%
 cancer_dict = {
     'all_cancers': [],
@@ -44,6 +37,11 @@ cancer_dict = {
     "lymphoid and hematopoietic tissue": ['C81-C96'] + 
         [str(i) for i in range(200, 208+1)]
 }
+
+df = pd.DataFrame(cancer_dict.items(), columns=['Cancer Type', 'ICD List'])
+df.to_csv('../output_data/cancer_icd.csv', index=False)
+
+# %%
 for cancer_desc, cancer_icd_list in cancer_dict.items():
     with open('{}.pickle'.format(cancer_desc), 'wb') as f:
         pickle.dump((cancer_icd_list, cancer_desc), f)

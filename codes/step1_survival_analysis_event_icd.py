@@ -12,6 +12,7 @@ from useful_chunk import create_dir
 # read data
 treat_df = pd.read_pickle('../data/treat_data_RA.pkl')
 control_df = pd.read_pickle('../data/control_data_RA.pkl')
+# control_df = pd.read_pickle('../data/potential_data/treat_data_final.pkl')
 # %%
 # print(sys.argv)
 # assert(len(sys.argv) == 2)
