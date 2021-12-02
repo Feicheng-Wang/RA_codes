@@ -79,7 +79,12 @@ def get_survival(df, cancer_icd_list, cancer_desc, mode):
     func_df = df.copy()
 
     if len(cancer_icd_list) != 0:
-        func_df['cancerFlag'] = func_df[f'{Mode}CancerIcdShort'].isin(cancer_icd_list)
+        if len(cancer_icd_list[0] > 3): # which means code is like 162.2 but not 162
+            func_df[f'{Mode}CancerIcdLength5'] = \
+                func_df[f'{Mode}GroupFirstCancerIcd'].apply(lambda x: str(x)[:5])
+            func_df['cancerFlag'] = func_df[f'{Mode}CancerIcdLength5'].isin(cancer_icd_list)
+        else:
+            func_df['cancerFlag'] = func_df[f'{Mode}CancerIcdShort'].isin(cancer_icd_list)
     else:
         func_df['cancerFlag'] = ~func_df[f'{Mode}CancerIcdShort'].isna()
     num_cancer = func_df['cancerFlag'].sum()

@@ -30,6 +30,11 @@ tuple(['173', 'C44']): 'Other and unspecified malignant neoplasm of skin',
 tuple(['160', 'C30', 'C31']): 'Malignant neoplasm of nasal cavities, middle ear and accessory sinuses', 
 tuple(['161', 'C32']): 'Malignant neoplasm of larynx', 
 tuple(['162', 'C33', 'C34']):	'Malignant neoplasm of trachea, bronchus and lung', 
+tuple(['162.0', 'C33']):	'Malignant neoplasm of trachea', 
+tuple(['162.2', 'C34.0']):	'Malignant neoplasm of main bronchus', 
+tuple(['162.3', '162.4', '162.5', '162.8', '162.9', 'C34.1', 
+    'C34.2', 'C34.3', 'C34.8', 'C34.9']): \
+    'Malignant neoplasm of lung and other parts of bronchus', 
 tuple(['163', '164', 'C37', 'C38']): 'Malignant neoplasm of pleura, thymus, heart and mediastinum', 
 tuple(['165', 'C39']):	'Malignant neoplasm of other and ill-defined sites \
 within the respiratory system and intrathoracic organs', 

@@ -18,6 +18,10 @@ from useful_chunk import create_dir
 '''
 "lymphoid and hematopoietic tissue"
 "respiratory and intrathoracic organs"
+"Malignant neoplasm of trachea, bronchus and lung"
+"Multiple myeloma and immunoproliferative neoplasms"
+"Other malignant neoplasms of lymphoid and histiocytic tissue"
+"Other and unspecified malignant neoplasm of skin"
 '''
 
 def survival_plot_one_cancer(cancer_desc, image_type='png'):
@@ -92,8 +96,18 @@ def survival_plot_one_cancer(cancer_desc, image_type='png'):
     else:
         fig.savefig(f'{base_path}/cancer_count={cancer_count}-hazard={hazard_at_1500}-{cancer_desc}.pdf')
 
+# # %%
+# survival_plot_one_cancer("lymphoid and hematopoietic tissue")
+# # %%
+# survival_plot_one_cancer("respiratory and intrathoracic organs")
 # %%
-survival_plot_one_cancer("lymphoid and hematopoietic tissue")
-# %%
-survival_plot_one_cancer("respiratory and intrathoracic organs")
+cancer_list = [
+"lymphoid and hematopoietic tissue",
+"respiratory and intrathoracic organs",
+"Malignant neoplasm of trachea, bronchus and lung",
+"Multiple myeloma and immunoproliferative neoplasms",
+"Other malignant neoplasms of lymphoid and histiocytic tissue",
+"Other and unspecified malignant neoplasm of skin",]
+for cancer in cancer_list:
+    survival_plot_one_cancer(cancer)
 # %%

@@ -34,10 +34,12 @@ def HR_CI_plot(plottype):
     elif plottype == 'focus':
         cancer_list = [
             # "Malignant neoplasm of nasal cavities, middle ear and accessory sinuses", \
+            'Malignant melanoma of skin',
+            'Other and unspecified malignant neoplasm of skin',
             "Malignant neoplasm of larynx", \
             "Malignant neoplasm of trachea, bronchus and lung", \
-            "Malignant neoplasm of other and ill-defined sites within the respiratory system and intrathoracic organs", \
-            "Lymphosarcoma and reticulosarcoma", \
+            # "Malignant neoplasm of other and ill-defined sites within the respiratory system and intrathoracic organs", \
+            # "Lymphosarcoma and reticulosarcoma", \
             "Hodgkin's disease", \
             "Other malignant neoplasms of lymphoid and histiocytic tissue", \
             "Multiple myeloma and immunoproliferative neoplasms", \
@@ -81,6 +83,11 @@ def HR_CI_plot(plottype):
             HR_array[i] = np.round(
                 float(auto_risk_dict[time]/nonauto_risk_dict[time]), 3)
 
+        #                 cph = CoxPHFitter()
+        # cph.fit(both_survival, duration_col='survivalTime', event_col='cancerFlag', 
+        #     weights_col='weightN')
+        # pvalue = cph.summary.loc['group', 'p']
+
         tmp_df = pd.DataFrame()
         tmp_df['hazard_ratio'] = HR_array
         tmp_df['time_in_days'] = time_list
@@ -103,18 +110,21 @@ def HR_CI_plot(plottype):
         # df[label] = np.round(df[label] * 1e-6, 2)
         df[label] = np.round(df[label], 2)
 
-    lower_index = list(df.columns).index('lower')
-    upper_index = list(df.columns).index('upper')
+    # lower_index = list(df.columns).index('lower')
+    # upper_index = list(df.columns).index('upper')
 
-    df[['lower', 'upper']] = df[['upper', 'lower']] 
-    df.columns.values[lower_index] = 'upper'
-    df.columns.values[upper_index] = 'lower'
+    # df[['lower', 'upper']] = df[['upper', 'lower']] 
+    # df.columns.values[lower_index] = 'upper'
+    # df.columns.values[upper_index] = 'lower'
 
     df['expression'] = df.apply(lambda x: f"{x['hazard_ratio']}[{x['lower']}, {x['upper']}]", 
         axis = 1)
 
     # save the results
-    df.to_pickle('../output_data/HR_summary.pickle')
+    if plottype == 'all':
+        df.to_pickle('../output_data/all_HR_summary.pickle')
+    elif plottype == 'focus':
+        df.to_pickle('../output_data/focus_HR_summary.pickle')
     # df = pd.read_pickle('../output_data/HR_summary.pickle')
 
     df[df['time_in_days'] == 365].sort_values('cancer_count', ascending=False)
@@ -130,8 +140,13 @@ def HR_CI_plot(plottype):
     df[df['time_in_days'] == 365].to_excel('../output/HR_summary_365.xlsx')
 
     df = df.sort_values('cancer_count', ascending=True)
-    N = len(df.cancer_desc.unique())
+    # N = len(df.cancer_desc.unique())
     color_plate = sns.color_palette("husl", 7)
+
+    df['cancer_desc'] = df[['cancer_desc', 'cancer_count']].apply(
+        lambda row: "-".join([str(row['cancer_count']), row['cancer_desc']]), axis=1)
+
+    df = df[df['cancer_count'] > 20].copy()
 
     fig = plt.figure(figsize = (10,10))
     ax = fig.add_subplot(111)
@@ -147,9 +162,9 @@ def HR_CI_plot(plottype):
         color = color_plate[5])
 
     plt.legend()
-    width = 1
+    width = 1.0
     # ax.set_xticks(ind + width / 2, df.cancer_desc.unique())
-    plt.yticks(ind + width / 2, df.cancer_desc.unique())
+    plt.yticks(ind, df.cancer_desc.unique())
     max_height = 1 + np.nanmax(df['upper']) # ignore nan
 
     plt.xlim(right = max_height - 0.6)
@@ -168,16 +183,16 @@ def HR_CI_plot(plottype):
     plt.legend(fontsize= 20)
     ax.title.set_size(fontsize=20)
     if plottype == "all":
-        plt.savefig(f"../output/new_summary_fig/RA_hazard_ratio_withCI_time_{time}.png", dpi=200,
+        plt.savefig(f"../output/new_summary_fig/RA_hazard_ratio_withCI_time_{time}.png", dpi=300,
             bbox_inches='tight')   
     elif plottype == "focus":
-        plt.savefig(f"../output/new_summary_fig/RA_focus_hazard_ratio_withCI_time_{time}.png", dpi=200, 
+        plt.savefig(f"../output/new_summary_fig/RA_focus_hazard_ratio_withCI_time_{time}.png", dpi=300, 
             bbox_inches='tight')  
 
 
 
 # %%
-HR_CI_plot('all')
+# HR_CI_plot('all')
 # %%
 HR_CI_plot('focus')
 # %%
