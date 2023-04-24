@@ -2,7 +2,7 @@
 import pandas as pd
 from lifelines import KaplanMeierFitter
 
-def kmf_plotter(data, label, ax=None, ci_show=True, plot_flag=True, loc_lower=None):
+def kmf_plotter(data, label, ax=None, ci_show=True, plot_flag=True, loc_lower=None, return_kmf=False):
     
     '''
         data: need colnames survivalTime, cancerFlag and weightN
@@ -20,7 +20,7 @@ def kmf_plotter(data, label, ax=None, ci_show=True, plot_flag=True, loc_lower=No
     T = data['survivalTime']
     E = data['cancerFlag']
     weights = data['weightN']
-    kmf.fit(T, event_observed=E, weights=weights)
+    kmf.fit(T, event_observed=E, weights=weights, label=label)
     if plot_flag is True:
         if loc_lower is None:
             if ci_show is True:
@@ -34,7 +34,10 @@ def kmf_plotter(data, label, ax=None, ci_show=True, plot_flag=True, loc_lower=No
     cum_risk_500 = kmf.cumulative_density_at_times(times=500)
     cum_risk_1500 = kmf.cumulative_density_at_times(times=1500)
     cum_risk_3500 = kmf.cumulative_density_at_times(times=3500)
-    return ax, cum_risk_500, cum_risk_1500, cum_risk_3500
+    if return_kmf:
+        return kmf, ax, cum_risk_500, cum_risk_1500, cum_risk_3500
+    else:
+        return ax, cum_risk_500, cum_risk_1500, cum_risk_3500
 
 
 def get_survival(df, cancer_icd_list, cancer_desc, mode):
@@ -79,10 +82,11 @@ def get_survival(df, cancer_icd_list, cancer_desc, mode):
     func_df = df.copy()
 
     if len(cancer_icd_list) != 0:
-        if len(cancer_icd_list[0] > 3): # which means code is like 162.2 but not 162
+        if len(cancer_icd_list[0]) > 3: # which means code is like 162.2 but not 162
             func_df[f'{Mode}CancerIcdLength5'] = \
                 func_df[f'{Mode}GroupFirstCancerIcd'].apply(lambda x: str(x)[:5])
-            func_df['cancerFlag'] = func_df[f'{Mode}CancerIcdLength5'].isin(cancer_icd_list)
+            func_df['cancerFlag'] = func_df[f'{Mode}CancerIcdLength5'].isin(cancer_icd_list) | \
+                func_df[f'{Mode}CancerIcdShort'].isin(cancer_icd_list)
         else:
             func_df['cancerFlag'] = func_df[f'{Mode}CancerIcdShort'].isin(cancer_icd_list)
     else:

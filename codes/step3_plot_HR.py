@@ -1,5 +1,7 @@
 '''
 Plot HR as bars (default at 365 days)
+
+move output_data/* from cloud to local first
 '''
 # %%
 import pandas as pd
@@ -9,6 +11,7 @@ from helper import cal_survival_risk
 from useful_chunk import create_dir
 import matplotlib.pyplot as plt
 import seaborn as sns
+from plot_helper  import add_at_risk_counts
 # %%
 random_seed = 1234
 
@@ -37,7 +40,10 @@ def HR_CI_plot(plottype):
             'Malignant melanoma of skin',
             'Other and unspecified malignant neoplasm of skin',
             "Malignant neoplasm of larynx", \
-            "Malignant neoplasm of trachea, bronchus and lung", \
+            # "Malignant neoplasm of trachea, bronchus and lung", \
+            # "Malignant neoplasm of trachea", \
+            "Malignant neoplasm of main bronchus", \
+            "Malignant neoplasm of lung and other parts of bronchus", \
             # "Malignant neoplasm of other and ill-defined sites within the respiratory system and intrathoracic organs", \
             # "Lymphosarcoma and reticulosarcoma", \
             "Hodgkin's disease", \
@@ -143,8 +149,10 @@ def HR_CI_plot(plottype):
     # N = len(df.cancer_desc.unique())
     color_plate = sns.color_palette("husl", 7)
 
+    # df['cancer_desc'] = df[['cancer_desc', 'cancer_count']].apply(
+    #     lambda row: "-".join([str(row['cancer_count']), row['cancer_desc']]), axis=1)
     df['cancer_desc'] = df[['cancer_desc', 'cancer_count']].apply(
-        lambda row: "-".join([str(row['cancer_count']), row['cancer_desc']]), axis=1)
+        lambda row: f"{row['cancer_desc']} (n={row['cancer_count']})", axis=1)
 
     df = df[df['cancer_count'] > 20].copy()
 
@@ -182,17 +190,31 @@ def HR_CI_plot(plottype):
     plt.yticks(fontsize= 20)
     plt.legend(fontsize= 20)
     ax.title.set_size(fontsize=20)
+
+    # old
+    # if plottype == "all":
+    #     plt.savefig(f"../output/new_summary_fig/RA_hazard_ratio_withCI_time_{time}.png", dpi=600,
+    #         bbox_inches='tight')   
+    # elif plottype == "focus":
+    #     plt.savefig(f"../output/new_summary_fig/RA_focus_hazard_ratio_withCI_time_{time}.png", dpi=600, 
+    #         bbox_inches='tight')  
+
+    # print version
     if plottype == "all":
-        plt.savefig(f"../output/new_summary_fig/RA_hazard_ratio_withCI_time_{time}.png", dpi=300,
+        plt.savefig(f"../publish_figs/png/Figure2(a).png", dpi=600,
+            bbox_inches='tight')   
+        plt.savefig(f"../publish_figs/pdf/Figure2(a).pdf", dpi=600,
             bbox_inches='tight')   
     elif plottype == "focus":
-        plt.savefig(f"../output/new_summary_fig/RA_focus_hazard_ratio_withCI_time_{time}.png", dpi=300, 
+        plt.savefig(f"../publish_figs/png/Figure2(b).png", dpi=600, 
+            bbox_inches='tight')  
+        plt.savefig(f"../publish_figs/pdf/Figure2(b).pdf", dpi=600, 
             bbox_inches='tight')  
 
 
 
 # %%
-# HR_CI_plot('all')
-# %%
-HR_CI_plot('focus')
+if __name__ == "__main__":
+    HR_CI_plot('all')
+    HR_CI_plot('focus')
 # %%

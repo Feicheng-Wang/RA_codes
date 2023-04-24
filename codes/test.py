@@ -10,11 +10,9 @@ from lifelines import CoxPHFitter
 import numpy as np
 from useful_chunk import create_dir
 # from lifelines.plotting import add_at_risk_counts
-from plot_helper  import add_at_risk_counts
-import seaborn as sns
+# from plot_helper import remove_spines, move_spines, remove_ticks, is_latex_enabled
+from plot_helper import add_at_risk_counts
 
-sns.set(style="ticks")
-sns.set_style("darkgrid")
 
 # read data
 # treat_df = pd.read_pickle('../data/treat_data_RA.pkl')
@@ -31,7 +29,7 @@ sns.set_style("darkgrid")
 '''
 plt.rcParams.update({'font.size': 15})
 
-def survival_plot_one_cancer(cancer_desc, image_type='png', figure_path=None):
+def survival_plot_one_cancer(cancer_desc, image_type='png'):
     '''
     Plot the survival curve for comparing RA and non-RA patients on one specific cancer.
     
@@ -44,9 +42,7 @@ def survival_plot_one_cancer(cancer_desc, image_type='png', figure_path=None):
         cancer_icd_list, cancer_desc, treat_survival_df, control_survival_df = \
             pickle.load(f)
 
-    # fig, ax = plt.subplots(figsize=(12, 4))
-    fig = plt.figure(figsize=(12, 6))
-    ax = plt.subplot(111)
+    fig, ax = plt.subplots(figsize=(12, 4))
     kmf_treat, ax, treat_risk_at500, treat_risk_at1500, treat_risk_at3500 = \
         kmf_plotter(data = treat_survival_df, label='RA patients', return_kmf=True)
     kmf_control, ax, control_risk_at500, control_risk_at1500, control_risk_at3500 = \
@@ -96,8 +92,8 @@ def survival_plot_one_cancer(cancer_desc, image_type='png', figure_path=None):
     f'RA group cancer patient counts = {cancer_count}')
     plt.xlabel("Days")
     
-    add_at_risk_counts(kmf_treat, kmf_control, ax=ax, fig=fig)
-    # return counts, kmf_treat, kmf_control
+    ax, ticklabels = add_at_risk_counts(kmf_treat, kmf_control, ax=ax)
+
     plt.tight_layout()
 
     if pvalue < 1e-4:
@@ -105,68 +101,74 @@ def survival_plot_one_cancer(cancer_desc, image_type='png', figure_path=None):
     else:
         ax.text(0.05, 0.05, text, transform=ax.transAxes)
 
-    if figure_path is None:
-        if image_type == 'png':
-            fig.savefig(f'{base_path}/cancer_count={cancer_count}-hazard={hazard_at_1500}-{cancer_desc}.jpg', 
-            bbox_inches='tight', dpi=200)
-        else:
-            fig.savefig(f'{base_path}/cancer_count={cancer_count}-hazard={hazard_at_1500}-{cancer_desc}.pdf',
-            bbox_inches='tight')
+    if image_type == 'png':
+        plt.savefig(f'{base_path}/cancer_count={cancer_count}-hazard={hazard_at_1500}-{cancer_desc}.png', dpi=200)
     else:
-        fig.savefig(figure_path, bbox_inches='tight', dpi=600)
+        plt.savefig(f'{base_path}/cancer_count={cancer_count}-hazard={hazard_at_1500}-{cancer_desc}.pdf')
 
-# # 
-# survival_plot_one_cancer("lymphoid and hematopoietic tissue", image_type='pdf')
-# # 
-# survival_plot_one_cancer("respiratory and intrathoracic organs", image_type='pdf')
-# survival_plot_one_cancer("lymphoid and hematopoietic tissue")
-# survival_plot_one_cancer("breast", image_type='pdf')
-# plt.tight_layout()
-# %%
-if __name__  == "__main__":
-    for ext in ['pdf', 'png']:
-        survival_plot_one_cancer("lymphoid and hematopoietic tissue", 
-            figure_path=f"../publish_figs/{ext}/Figure4(a).{ext}")
-        survival_plot_one_cancer("respiratory and intrathoracic organs",
-            figure_path=f"../publish_figs/{ext}/Figure4(b).{ext}")
-        survival_plot_one_cancer("Malignant neoplasm of trachea, bronchus and lung", 
-            figure_path=f"../publish_figs/{ext}/FigureS2(a).{ext}")
-        survival_plot_one_cancer("Multiple myeloma and immunoproliferative neoplasms",
-            figure_path=f"../publish_figs/{ext}/FigureS2(b).{ext}")
-        survival_plot_one_cancer("Other and unspecified malignant neoplasm of skin",
-            figure_path=f"../publish_figs/{ext}/FigureS2(c).{ext}")
-        survival_plot_one_cancer("Other malignant neoplasms of lymphoid and histiocytic tissue", 
-            figure_path=f"../publish_figs/{ext}/FigureS2(d).{ext}")
-
+    return kmf_treat, kmf_control, ticklabels
 # # %%
-# cancer_list = [
-# "lymphoid and hematopoietic tissue",
-# "respiratory and intrathoracic organs",
-# "Malignant neoplasm of trachea, bronchus and lung",
-# "Multiple myeloma and immunoproliferative neoplasms",
-# "Other malignant neoplasms of lymphoid and histiocytic tissue",
-# "Other and unspecified malignant neoplasm of skin",]
-# for cancer in cancer_list:
-#     # survival_plot_one_cancer(cancer, image_type='pdf')
-#     survival_plot_one_cancer(cancer, 
-#         figure_path="../publish_figs/pdf/Figure4(a).pdf")
+# survival_plot_one_cancer("lymphoid and hematopoietic tissue")
+# # %%
+# survival_plot_one_cancer("respiratory and intrathoracic organs")
+kmf_treat, kmf_control, ticklabels = survival_plot_one_cancer("lymphoid and hematopoietic tissue")
+plt.tight_layout()
 # %%
+ax = plt.gca()
+ax.set_xticklabels(ticklabels, ha="right") # horizontalalignment
 # %%
-cancer_desc = "breast"
-with open(f'../output_data/survival_analysis/{cancer_desc}.pickle', 'rb') as f:
-    cancer_icd_list, cancer_desc, treat_survival_df, control_survival_df = \
-        pickle.load(f)
+f = kmf_control
+tick = 500.0
+event_table_slice = (
+    f.event_table.assign(at_risk=lambda x: x.at_risk - x.removed)
+    .loc[:tick, ["at_risk", "censored", "observed"]]
+    .agg({"at_risk": "min", "censored": "sum", "observed": "sum"})
+    .rename({"at_risk": "At risk", "censored": "Censored", "observed": "Events"})
+)
+event_table_slice
+# %%
+import seaborn as sns
 
-# fig, ax = plt.subplots(figsize=(12, 4))
-fig = plt.figure(figsize=(12, 6))
-ax = plt.subplot(111)
-kmf_treat, ax, treat_risk_at500, treat_risk_at1500, treat_risk_at3500 = \
-    kmf_plotter(data = treat_survival_df, label='RA patients', return_kmf=True)
-kmf_control, ax, control_risk_at500, control_risk_at1500, control_risk_at3500 = \
-    kmf_plotter(data = control_survival_df, label='non RA patients', ax=ax, return_kmf=True)
-# %%
-for time in [365, 4000]:
-    print(kmf_treat.cumulative_density_at_times(times=time) / \
-    kmf_control.cumulative_density_at_times(times=time))
+sns.set(style="ticks")
+sns.set_style("darkgrid")
+sns.set(font_scale=1.5)
+
+### China Gini illustation
+value = np.array([0, 500, 1000, 2000, 5000, 10000, 1e5, 5e5, 1e6, 1e7])
+population = np.array([0, 5.6, 3.1, 3.8, 0.8, 0.4, 0.25, 0.05, 0.01, 0.001])
+
+## calculation
+total_gdp = np.sum(value * population)
+print(total_gdp)
+total_population = np.sum(population)
+print(total_population)
+
+cumsum_gdp = np.cumsum(value * population)
+print(cumsum_gdp)
+
+cumsum_population = np.cumsum(population)
+
+## calculate GINI coef 
+full_area = total_gdp * total_population / 2
+area_under_red = 0
+for i in range(len(cumsum_population) - 1): 
+    area_under_red += population[i+1] * (cumsum_gdp[i] + cumsum_gdp[i+1]) / 2
+gini = 1 - np.round(area_under_red / full_area, 2)
+print(gini)
+
+## make plot
+fig = plt.figure(figsize = (10,10))
+plt.plot(cumsum_population, cumsum_gdp, color='red', label='??')
+slope = cumsum_gdp[-1] / cumsum_population[-1]
+optimal_line = cumsum_population * slope
+plt.plot(cumsum_population, optimal_line, color='green', label='ideal')
+plt.axhline(0, color='black')
+plt.axvline(cumsum_population[-1], color='black')
+
+plt.fill_between(cumsum_population, cumsum_gdp, optimal_line, color='grey', alpha=0.5)
+# plt.xlabel("Population (100 million)")
+# plt.ylabel("Cumulative Income (100 million yuan)")
+# plt.title("Gini coef = ")
+plt.legend()
 
 # %%

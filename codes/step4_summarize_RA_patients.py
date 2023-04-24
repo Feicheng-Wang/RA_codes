@@ -18,6 +18,7 @@
 # %%
 import pandas as pd
 
+pd.set_option('display.max_colwidth', 255)
 df = pd.read_pickle('../output_data/focus_HR_summary.pickle')
 df.loc[df['time_in_days'] == 365, ['cancer_desc', 'cancer_count', 'expression']]\
     .sort_values('cancer_count', ascending=False)
